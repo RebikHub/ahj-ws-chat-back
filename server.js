@@ -1,11 +1,18 @@
-const data = require('./tickets');
+const http = require('http');
 const Koa = require('koa');
 const koaBody = require('koa-body');
+const Router = require('koa-router');
+const router = new Router();
 const app = new Koa();
 const { v4: uuidv4 } = require('uuid');
-const port = process.env.PORT || 3333;
 
-app.use(koaBody({ urlencoded:true, }));
+const users = ['ivan', 'den'];
+
+app.use(koaBody({
+    urlencoded: true,
+    multipart: true,
+    json:true,
+}));
 
 app.use(async (ctx, next) => {
     const origin = ctx.request.get('Origin');
@@ -27,100 +34,32 @@ app.use(async (ctx, next) => {
         if (ctx.request.get('Access-Control-Request-Headers')) {
             ctx.response.set('Access-Control-Allow-Headers', ctx.request.get('Access-Control-Allow-Request-Headers'));
         }
-        ctx.response.status = 204;// No content
+        ctx.response.status = 204;
     }
 });
 
-app.use(async ctx => {
-    const { method, id } = ctx.request.query;
-    if (method === 'allTickets') {
-        ctx.response.body = data.tickets;
-        return;
-    }
-
-    if (method === 'ticketById') {
-        data.fullTickets.forEach((item) => {
-            if (item.id === id) {
-                ctx.response.body = item.description;
-            }
-        })
-        return;
-    }
-
-    if (method === 'statusId') {
-        data.fullTickets.forEach((item) => {
-            if (item.id === id) {
-                if (item.status === true) {
-                    item.status = false;
-                } else {
-                    item.status = true;
-                }
-            }
-        })
-        data.tickets.forEach((item) => {
-            if (item.id === id) {
-                if (item.status === true) {
-                    item.status = false;
-                } else {
-                    item.status = true;
-                }
-            }
-        })
-        return;
-    }
-
-    if (method === 'deleteId') {
-        let indexF = null;
-        let index = null;
-        data.fullTickets.forEach((item, i) => {
-            if (item.id === id) {
-                indexF = i;
-            }
-        })
-        data.fullTickets.splice(indexF, 1);
-        data.tickets.forEach((item, i) => {
-            if (item.id === id) {
-                index = i;
-            }
-        })
-        data.tickets.splice(index, 1);
-        return;
-    }
-
-    if (method === 'createTicket') {
-        const ticket = JSON.parse(ctx.request.body);
-
-        if (ticket.id) {
-            data.tickets.forEach((item) => {
-                if (item.id === ticket.id) {
-                    item.name = ticket.name;
-                    item.status = ticket.status;
-                }
-            })
-            data.fullTickets.forEach((item) => {
-                if (item.id === ticket.id) {
-                    item.name = ticket.name;
-                    item.description = ticket.description;
-                    item.status = ticket.status;
-                }
-            })
-            return;
-        }
-        ticket.id = uuidv4();
-        data.fullTickets.push(ticket);
-        data.tickets.push({
-            id: ticket.id,
-            name: ticket.name,
-            status: ticket.status,
-            created: ticket.created
-        });
-        ctx.response.status = 200;
-        return;
-    }
-
-    ctx.response.status = 404;
-    return;
+router.get('/users', async (ctx, next) => {
+    // return list of users
+    ctx.response.body = users;
 });
 
+router.post('/users', async (ctx, next) => {
+    // create new contact
+    users.push({...ctx.request.body, id: uuidv4()});
+    ctx.response.status=204;
+});
 
-app.listen(port, () => console.log('Server started'));
+router.delete('/users/:id', async (ctx, next) => {
+    // remove contact by id (ctx.params.id)
+    const index = users.findIndex(({id}) => id === ctx.params.id);
+    if (index !== -1) {
+        users.splice(index, 1);
+    };
+    ctx.response.status=204;
+});
+
+app.use(router.routes()).use(router.allowedMethods());
+
+const port = process.env.PORT || 3333;
+const server = http.createServer(app.callback())
+server.listen(port, () => console.log('Server started'));

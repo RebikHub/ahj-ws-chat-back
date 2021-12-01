@@ -1,0 +1,35 @@
+{
+  "name": "ahj-ws-chat-back",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "forever server.js",
+    "watch": "forever -w server.js",
+    "start-node": "nodemon server.js"
+  },
+  "engines": {
+    "node": "12"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RebikHub/ahj-ws-chat-back.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RebikHub/ahj-ws-chat-back/issues"
+  },
+  "homepage": "https://github.com/RebikHub/ahj-ws-chat-back#readme",
+  "dependencies": {
+    "forever": "^4.0.1",
+    "koa": "^2.13.4",
+    "koa-body": "^4.2.0",
+    "koa-static": "^5.0.0",
+    "uuid": "^8.3.2",
+    "ws": "^8.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+}

@@ -6,7 +6,9 @@ const router = new Router();
 const app = new Koa();
 const { v4: uuidv4 } = require('uuid');
 
-const users = ['ivan', 'den'];
+const WS = require('ws');
+
+const users = [];
 
 app.use(koaBody({
     urlencoded: true,
@@ -39,22 +41,29 @@ app.use(async (ctx, next) => {
 });
 
 router.get('/users', async (ctx, next) => {
-    // return list of users
     ctx.response.body = users;
 });
 
 router.post('/users', async (ctx, next) => {
-    // create new contact
-    users.push({...ctx.request.body, id: uuidv4()});
-    ctx.response.status=204;
+    try {
+        users.forEach((elem) => {
+            if (elem.nickname === ctx.request.body) {
+                throw new Error('такой никнейм уже есть!');
+            }
+        })
+        users.push({nickname: ctx.request.body, id: uuidv4()});
+        ctx.response.status = 204;
+    } catch (error) {
+        ctx.response.body = 'ошибка';
+    }
 });
 
 router.delete('/users/:id', async (ctx, next) => {
-    // remove contact by id (ctx.params.id)
-    const index = users.findIndex(({id}) => id === ctx.params.id);
+    const index = users.findIndex((elem) => elem.id === ctx.params.id);
     if (index !== -1) {
         users.splice(index, 1);
     };
+    console.log(users);
     ctx.response.status=204;
 });
 
@@ -62,4 +71,23 @@ app.use(router.routes()).use(router.allowedMethods());
 
 const port = process.env.PORT || 3333;
 const server = http.createServer(app.callback())
+
+const wsServer = new WS.Server({ server });
+
+wsServer.on('connection', (ws, req) => {
+  ws.on('message', msg => {
+    //   console.log(msg);
+      const data = msg.toString('utf-8');
+    console.log(data);
+    [...wsServer.clients]
+    .filter(o => o.readyState === WS.OPEN)
+    .forEach(o => o.send(data));
+  });
+
+  ws.on('close', ev => {
+    //   console.log(ev);
+  })
+//   ws.send('welcome');
+});
+
 server.listen(port, () => console.log('Server started'));

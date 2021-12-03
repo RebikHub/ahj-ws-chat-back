@@ -1,5 +1,5 @@
 const http = require('http');
-const https = require('https');
+// const https = require('https');
 const Koa = require('koa');
 const cors = require('koa2-cors');
 const koaBody = require('koa-body');
@@ -56,7 +56,7 @@ router.delete('/users/:id', async (ctx, next) => {
 app.use(router.routes()).use(router.allowedMethods());
 
 const port = process.env.PORT || 3333;
-const server = https.createServer(app.callback())
+const server = http.createServer(app.callback())
 
 const wsServer = new WS.Server({ server });
 

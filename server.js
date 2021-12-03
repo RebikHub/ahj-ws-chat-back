@@ -1,5 +1,6 @@
 const http = require('http');
 const Koa = require('koa');
+const cors = require('koa2-cors');
 const koaBody = require('koa-body');
 const Router = require('koa-router');
 const router = new Router();
@@ -16,29 +17,14 @@ app.use(koaBody({
     json:true,
 }));
 
-app.use(async (ctx, next) => {
-    const origin = ctx.request.get('Origin');
-    if (!origin) {
-        return await next();
-    }
-    const headers = {'Access-Control-Allow-Origin':'*',};
-    if (ctx.request.method!=='OPTIONS') {
-        ctx.response.set({...headers});
-        try {
-            return await next();
-        } catch (e) {
-            e.headers = {...e.headers, ...headers};
-            throw e;
-        }
-    }
-    if (ctx.request.get('Access-Control-Request-Method')) {
-        ctx.response.set({...headers,'Access-Control-Allow-Methods':'GET, POST, PUT, DELETE, PATCH',});
-        if (ctx.request.get('Access-Control-Request-Headers')) {
-            ctx.response.set('Access-Control-Allow-Headers', ctx.request.get('Access-Control-Allow-Request-Headers'));
-        }
-        ctx.response.status = 204;
-    }
-});
+app.use(
+    cors({
+      origin: '*',
+      credentials: true,
+      'Access-Control-Allow-Origin': true,
+      allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
+    })
+  )
 
 router.get('/users', async (ctx, next) => {
     ctx.response.body = users;
@@ -63,7 +49,6 @@ router.delete('/users/:id', async (ctx, next) => {
     if (index !== -1) {
         users.splice(index, 1);
     };
-    console.log(users);
     ctx.response.status=204;
 });
 
@@ -76,18 +61,11 @@ const wsServer = new WS.Server({ server });
 
 wsServer.on('connection', (ws, req) => {
   ws.on('message', msg => {
-    //   console.log(msg);
-      const data = msg.toString('utf-8');
-    console.log(data);
+    const data = msg.toString('utf-8');
     [...wsServer.clients]
     .filter(o => o.readyState === WS.OPEN)
     .forEach(o => o.send(data));
   });
-
-  ws.on('close', ev => {
-    //   console.log(ev);
-  })
-//   ws.send('welcome');
 });
 
 server.listen(port, () => console.log('Server started'));
